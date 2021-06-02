@@ -182,12 +182,10 @@ class UI {
                     Storage.saveCart(cart);
                     this.setCartValue(cart);
                     item.previousElementSibling.innerText = cartItem.ammount;
-
                 }
                 else {
                     cartContent.removeChild(item.parentElement.parentElement);
                     this.removeCartItem(itemId);
-
                 }
             }
         })
