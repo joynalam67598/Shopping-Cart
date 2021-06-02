@@ -53,7 +53,7 @@ class UI {
                 <div class="img-container">
                     <img src=${product.image} class="product-img" alt="product 1">
                     <button class="bag-btn" data-id=${product.id}>
-                        <i class="fas fa-shopping-cart">Add to bag</i>
+                        <i class="fas fa-shopping-cart">Add To Cart</i>
                     </button>
                 </div>
                 <h3>${product.title}</h3>
@@ -70,12 +70,12 @@ class UI {
             let itemId = button.dataset.id;
             let inCart = cart.find(item => item.id === itemId);
             if (inCart) {
-                button.innerText = 'In Cart';
+                button.innerHTML = 'In Cart';
                 button.disabled = true;
             }
             button.addEventListener('click', (event) => {
-                event.target.innerText = 'In Cart';
-                event.target.disabled;
+                event.target.innerHTML = 'In Cart';
+                event.target.disabled = true;
                 //get product from producs
                 let cartItem = { ...Storage.getProduct(itemId), ammount: 1 };
 
@@ -107,14 +107,14 @@ class UI {
         });
         cartTotal.innerText = parseFloat(tempTotal.toFixed(2));
         cartItems.innerText = itemsTotal;
-    };
+    }
     addCartItem(item) {
         const div = document.createElement('div');
         div.classList.add('cart-item');
         div.innerHTML = `
           <img src=${item.image} alt="product">
             <div>
-               <h4>${item.titel}</h4>
+               <h4>${item.title}</h4>
                 <h5>$${item.price}</h5>
                  <span class="remove-item" data-id=${item.id}>remove</span>
             </div>
@@ -126,11 +126,11 @@ class UI {
         `;
         cartContent.appendChild(div);
 
-    };
+    }
     showCart() {
         cartOverlay.classList.add('transparentBcg');
         cartDom.classList.add('showCart');
-    };
+    }
     setUpApp() {
         cart = Storage.getCart();
         this.setCartValue(cart);
@@ -138,13 +138,70 @@ class UI {
         cartBtn.addEventListener('click', this.showCart);
         colseCartBtn.addEventListener('click', this.closeCart);
 
-    };
+    }
     populate(cart) {
         cart.forEach(item => this.addCartItem(item));
     }
     closeCart() {
         cartOverlay.classList.remove('transparentBcg');
         cartDom.classList.remove('showCart');
+    }
+    cartLogic() {
+        // clear cart button
+        clearCartBtn.addEventListener('click', () => {
+            let cartItems = cart.map(item => item.id);
+            cartItems.forEach(id => this.removeCartItem(id));
+            while (cartContent.children.length > 0) {
+                cartContent.removeChild(cartContent.children[0]);
+            }
+            this.closeCart();
+        });
+        // cart funtionallity
+        cartContent.addEventListener('click', event => {
+            if (event.target.classList.contains('remove-item')) {
+                let removeItem = event.target;
+                let itemId = removeItem.dataset.id;
+                cartContent.removeChild(removeItem.parentElement.parentElement);
+                this.removeCartItem(itemId);
+            }
+            else if (event.target.classList.contains('fa-chevron-up')) {
+                let item = event.target;
+                let itemId = item.dataset.id;
+                let cartItem = cart.find(item => item.id === itemId);
+                cartItem.ammount += 1;
+                Storage.saveCart(cart);
+                this.setCartValue(cart);
+                item.nextElementSibling.innerText = cartItem.ammount;
+            }
+            else if (event.target.classList.contains('fa-chevron-down')) {
+                let item = event.target;
+                let itemId = item.dataset.id;
+                let cartItem = cart.find(item => item.id === itemId);
+                cartItem.ammount -= 1;
+                if (cartItem.ammount > 0) {
+                    Storage.saveCart(cart);
+                    this.setCartValue(cart);
+                    item.previousElementSibling.innerText = cartItem.ammount;
+                }
+                else {
+                    cartContent.removeChild(item.parentElement.parentElement);
+                    this.removeCartItem(itemId);
+                }
+            }
+        })
+
+    }
+    removeCartItem(itemId) {
+        cart = cart.filter(item => item.id !== itemId);
+        this.setCartValue(cart);
+        Storage.saveCart(cart);
+        let button = this.getSingleButton(itemId);
+        button.disabled = false;
+        button.innerHTML = `<i class='fas fa-shopping-cart'>Add to Cart</i>`
+
+    }
+    getSingleButton(itemId) {
+        return buttonsDOM.find(button => button.dataset.id === itemId);
     }
 
 
@@ -180,5 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
             Storage.saveProducts(products);
         }).then(() => {
             ui.getBagBack();
+            ui.cartLogic();
         });
 })
